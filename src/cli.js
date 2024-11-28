@@ -15,7 +15,7 @@ const COMPONENTS_REQUIRING_ICONS = ['toast', 'select'];
 const CONFIG_FILE = 'gus.config.json';
 
 const DEFAULT_CONFIG = {
-  baseUrl: 'https://raw.githubusercontent.com/eugustavo/albatroz/refs/heads/main/src/components',
+  baseUrl: 'https://raw.githubusercontent.com/eugustavo/gus/refs/heads/main/src/components',
   packageManager: null,
   dependencies: {
     'lucide-react-native': false,
