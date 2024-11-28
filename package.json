@@ -1,0 +1,24 @@
+{
+  "name": "gus",
+  "version": "1.0.0",
+  "description": "CLI for Gus UI components",
+  "main": "src/cli.js",
+  "bin": {
+    "gus": "src/cli.js"
+  },
+  "keywords": [
+    "cli",
+    "ui",
+    "react-native"
+  ],
+  "author": "Gustavo Souza",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "fs-extra": "^11.1.1",
+    "inquirer": "^8.2.4",
+    "ora": "^5.4.1"
+  }
+}
