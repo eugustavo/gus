@@ -20,9 +20,19 @@ const DEFAULT_CONFIG = {
   dependencies: {
     'lucide-react-native': false,
     'react-native-reanimated': false,
-    'react-native-gesture-handler': false
+    'react-native-gesture-handler': false,
+    'clsx': false,
+    'tailwind-merge': false
   }
 };
+
+const UTILS_FILE_CONTENT = `import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+`;
 
 const formatComponentName = (name) => {
   if (!name) return '';
@@ -33,6 +43,7 @@ const downloadComponent = async (componentName, baseUrl) => {
   try {
     const normalizedName = componentName.toLowerCase();
     const response = await axios.get(`${baseUrl}/${normalizedName}.tsx`);
+
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 404) {
@@ -54,7 +65,12 @@ const checkExpoProject = () => {
       process.exit(1);
     }
 
-    const requiredDeps = ['react-native-reanimated', 'react-native-gesture-handler'];
+    const requiredDeps = [
+      'react-native-reanimated',
+      'react-native-gesture-handler',
+      'clsx',
+      'tailwind-merge'
+    ];
     const missingDeps = requiredDeps.filter(dep => !dependencies[dep]);
 
     return {
@@ -124,6 +140,12 @@ const saveConfig = (config) => {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
 };
 
+const createUtilsFile = async () => {
+  const libPath = path.join(process.cwd(), 'src', 'lib');
+  await fs.ensureDir(libPath);
+  await fs.writeFile(path.join(libPath, 'utils.ts'), UTILS_FILE_CONTENT);
+};
+
 const addComponent = async (componentName, config) => {
   const spinner = ora('Adding component...').start();
 
@@ -133,13 +155,14 @@ const addComponent = async (componentName, config) => {
     if (!AVAILABLE_COMPONENTS.includes(normalizedName)) {
       spinner.fail(chalk.red('Component not available'));
       console.log(chalk.blue('\nAvailable components:'));
+
       AVAILABLE_COMPONENTS.forEach(comp => {
         console.log(chalk.yellow(`  - ${formatComponentName(comp)}`));
       });
+
       return;
     }
 
-    // Check and install required dependencies
     spinner.text = 'Checking dependencies...';
     const { missingDeps } = checkExpoProject();
     
@@ -189,17 +212,20 @@ const initializeProject = async () => {
       spinner.start();
     }
 
-    // Install missing dependencies if any
     for (const dep of missingDeps) {
       spinner.text = `Installing ${dep}...`;
       await installDependency(dep, config);
       config.dependencies[dep] = true;
     }
 
-    // Update dependency status
     config.dependencies['lucide-react-native'] = checkDependency('lucide-react-native');
     config.dependencies['react-native-reanimated'] = checkDependency('react-native-reanimated');
     config.dependencies['react-native-gesture-handler'] = checkDependency('react-native-gesture-handler');
+    config.dependencies['clsx'] = checkDependency('clsx');
+    config.dependencies['tailwind-merge'] = checkDependency('tailwind-merge');
+
+    spinner.text = 'Creating utils file...';
+    await createUtilsFile();
 
     saveConfig(config);
     
@@ -213,7 +239,7 @@ const initializeProject = async () => {
 };
 
 program
-  .name('@gus/ui')
+  .name('gus')
   .description('CLI for Gus UI components')
   .version('1.0.0');
 
