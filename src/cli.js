@@ -12,6 +12,10 @@ const axios = require('axios');
 const AVAILABLE_COMPONENTS = ['toast', 'badge', 'select', 'separator', 'alert-dialog'];
 const COMPONENTS_REQUIRING_ICONS = ['toast', 'select'];
 
+const COMPONENT_DEPENDENCIES = {
+  'select': ['expo-blur']
+};
+
 const CONFIG_FILE = 'gus.config.json';
 
 const DEFAULT_CONFIG = {
@@ -22,7 +26,8 @@ const DEFAULT_CONFIG = {
     'react-native-reanimated': false,
     'react-native-gesture-handler': false,
     'clsx': false,
-    'tailwind-merge': false
+    'tailwind-merge': false,
+    'expo-blur': false
   }
 };
 
@@ -36,7 +41,7 @@ export function cn(...inputs: ClassValue[]) {
 
 const formatComponentName = (name) => {
   if (!name) return '';
-  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  return name.charAt(0).toLowerCase() + name.slice(1).toLowerCase();
 };
 
 const downloadComponent = async (componentName, baseUrl) => {
@@ -172,6 +177,16 @@ const addComponent = async (componentName, config) => {
       config.dependencies[dep] = true;
     }
 
+    if (COMPONENT_DEPENDENCIES[normalizedName]) {
+      for (const dep of COMPONENT_DEPENDENCIES[normalizedName]) {
+        if (!checkDependency(dep)) {
+          spinner.text = `Installing ${dep}...`;
+          await installDependency(dep, config);
+          config.dependencies[dep] = true;
+        }
+      }
+    }
+
     if (COMPONENTS_REQUIRING_ICONS.includes(normalizedName)) {
       spinner.text = 'Checking icon library dependency...';
       config = await ensureIconLibrary(config);
@@ -190,7 +205,7 @@ const addComponent = async (componentName, config) => {
 
     saveConfig(config);
     
-    spinner.succeed(chalk.green(`Component ${formattedName.toLowerCase()} added successfully!`));
+    spinner.succeed(chalk.green(`Component ${formattedName} added successfully!`));
     console.log(chalk.gray(`\nLocation: src/components/ui/${formattedName}.tsx`));
   } catch (error) {
     spinner.fail(chalk.red(`Failed to add component ${formatComponentName(componentName)}`));
@@ -266,9 +281,11 @@ program
 
       if (!component) {
         console.log(chalk.blue('\nAvailable components:'));
+
         AVAILABLE_COMPONENTS.forEach(comp => {
           console.log(chalk.yellow(`  - ${formatComponentName(comp)}`));
         });
+        
         console.log(chalk.gray('\nUsage:'));
         console.log(chalk.yellow('  npx gus add <component>'));
         return;
